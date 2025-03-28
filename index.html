@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#000000">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon-192.png">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: row;
+    }
+    #display {
+      width: 50vw;
+      height: 100vh;
+      background: #f0f0f0;
+      font-size: 2em;
+      padding: 1em;
+      box-sizing: border-box;
+      overflow-y: auto;
+      overflow-x: hidden;
+      word-wrap: break-word;
+      white-space: normal;
+      display: flex;
+      align-items: flex-start;
+      justify-content: flex-end;
+      flex-direction: column;
+    }
+    #controls {
+      width: 50vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
+    }
+    #outputMode {
+      font-size: 1em;
+      margin: 0.25em;
+    }
+    #buttons {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-template-rows: repeat(5, 1fr);
+      gap: 0.25em;
+      padding: 0.25em;
+      box-sizing: border-box;
+      height: 100%;
+    }
+    button {
+      font-size: 1.5em;
+      width: 100%;
+      height: 100%;
+      border: none;
+      color: white;
+      border-radius: 0;
+    }
+    .gray { background-color: #666; }
+    .dark { background-color: #333; }
+    .green { background-color: green; }
+  </style>
+</head>
+<body>
+  <div id="display">0</div>
+  <div id="controls">
+    <select id="outputMode">
+      <option value="decimal">Decimal</option>
+      <option value="mixed">Mixed Number</option>
+      <option value="improper">Improper Fraction</option>
+    </select>
+    <div id="buttons">
+      <button class="dark" onclick="clearDisplay()">C</button>
+      <button class="dark" onclick="append('()')">()</button>
+      <button class="dark" onclick="append('%')">%</button>
+      <button class="gray" onclick="append('/')">&#247;</button>
+      <button class="dark" onclick="append('7')">7</button>
+      <button class="dark" onclick="append('8')">8</button>
+      <button class="dark" onclick="append('9')">9</button>
+      <button class="gray" onclick="append('*')">&#215;</button>
+      <button class="dark" onclick="append('4')">4</button>
+      <button class="dark" onclick="append('5')">5</button>
+      <button class="dark" onclick="append('6')">6</button>
+      <button class="gray" onclick="append('-')">-</button>
+      <button class="dark" onclick="append('1')">1</button>
+      <button class="dark" onclick="append('2')">2</button>
+      <button class="dark" onclick="append('3')">3</button>
+      <button class="gray" onclick="append('+')">+</button>
+      <button class="dark" onclick="toggleSign()">+/-</button>
+      <button class="dark" onclick="append('0')">0</button>
+      <button class="dark" onclick="append('.')">.</button>
+      <button class="green" onclick="calculate()">=</button>
+    </div>
+  </div>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js');
+    }
+
+    let expression = '';
+
+    function append(char) {
+      if (char === '()') {
+        expression += '(';
+      } else {
+        expression += char;
+      }
+      document.getElementById('display').innerText = expression;
+    }
+
+    function clearDisplay() {
+      expression = '';
+      document.getElementById('display').innerText = '0';
+    }
+
+    function toggleSign() {
+      try {
+        let value = eval(expression);
+        value *= -1;
+        expression = '' + value;
+        document.getElementById('display').innerText = expression;
+      } catch (e) {
+        document.getElementById('display').innerText = 'Error';
+      }
+    }
+
+    function calculate() {
+      try {
+        const value = eval(expression);
+        const mode = document.getElementById('outputMode').value;
+        const result = formatResult(value, mode);
+        document.getElementById('display').innerText = result;
+        expression = '' + value;
+      } catch (e) {
+        document.getElementById('display').innerText = 'Error';
+      }
+    }
+
+    function formatResult(value, mode) {
+      if (mode === 'decimal') return value.toFixed(4);
+      let num = Math.floor(value);
+      let frac = value - num;
+      let denom = 1;
+      while (Math.abs(frac - Math.round(frac)) > 0.001 && denom < 100) {
+        denom++;
+        frac = value * denom - num * denom;
+      }
+      let numerator = Math.round(frac);
+      if (mode === 'improper') {
+        return `${num * denom + numerator}/${denom}`;
+      } else if (mode === 'mixed') {
+        return numerator === 0 ? `${num}` : `${num} ${numerator}/${denom}`;
+      }
+    }
+  </script>
+</body>
+</html>
